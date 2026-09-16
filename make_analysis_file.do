@@ -1,10 +1,7 @@
 clear all
-cd "N:\durable\infs\Eclin_innsending"
-
 
 /* 1. Preparing data from the Norwegian Patient Registry (NPR) */
-describe using "N:\durable\ntnu\Utlevering_2_2022_2023\NPR\18_26713_NPR_Barn_AlleAldre_diagnoser_08_22"
-use "N:\durable\ntnu\Utlevering_2_2022_2023\NPR\18_26713_NPR_Barn_AlleAldre_diagnoser_08_22", clear
+use "Norwegian_Patient_Registry", clear
 count
 
 /* We only use inpatient stays (admissions) to define the outcomes */
@@ -322,8 +319,8 @@ count
 save "Datafiler/npr_pre_infections3.dta", replace
 
 /* 2. Preparing data from the Medical Birth Registry */
-describe using "N:\durable\ntnu\Utlevering_2_2022_2023\FHI\MFRdata_182049_kobling_A_2022.dta"
-use "N:\durable\ntnu\Utlevering_2_2022_2023\FHI\MFRdata_182049_kobling_A_2022.dta", clear
+describe using "Norwegian_Medical_Birth_Registry"
+use "Norwegian_Medical_Birth_Registry", clear
 drop if faar < 1992 | faar > 2021  
 count
 
@@ -370,7 +367,7 @@ replace lga_4sd =1 if (vekt > lga_limit_4sd) & svlen_dg!=. & vekt!=.
 gen Marsal_SD = (vekt - bw_Marsal)/(bw_Marsal*0.11)
 
 
-/* Excluding certain births */
+/* Excluding certain births (Flow-chart) */
 gen pop_infs = 1
 replace pop_infs = 0 if lopenr_barn == . |  inlist(dodkat, 7, 8, 9)
 replace pop_infs = 0 if svlen_dg == .
@@ -388,7 +385,7 @@ local NN = r(N)
 drop if pop_infs == 0
 count
 
-di `NN'- r()
+di `NN'- r(N)
 drop pop_infs
 count
 save "Datafiler\mfr_pop_infs3.dta", replace
@@ -402,7 +399,7 @@ rename lopenr_barn_a lopenr
 
 
 /* Merging death date and underlying cause of death */
-merge 1:1 lopenr using "Datafiler\DAARfil", keepusing(dmnd daar diagunderl alle_koder eushort)
+merge 1:1 lopenr using "Norwegian_Cause_of_Death_Registry", keepusing(dmnd daar diagunderl alle_koder eushort)
 drop if _merge == 2
 drop _merge
 
@@ -412,7 +409,7 @@ format deathdate %d
 drop if daar < 2008
 
 /* Merging emigration date */
-merge 1:1 lopenr using "Datafiler\emigrert_2020_02_fra_evry.dta"
+merge 1:1 lopenr using "Emigration_dates"
 
 drop if _merge == 2
 drop _merge
@@ -630,6 +627,6 @@ by lopenr: gen n1 = _n
 keep if n1 == 1
 count
 replace outc_sepsis = 0 if outc_sepsis==.
-save "Datafiler\analysefil_final_august2026.dta", replace
+save "Analysis_file", replace
 
 
